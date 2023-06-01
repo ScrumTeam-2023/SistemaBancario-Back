@@ -18,7 +18,7 @@ app.use(helmet())
 app.use(morgan('dev'))
 
 //Rutas Entidades
-
+app.use('/user',userRoutes)
 //servidor
 
 exports.initServer = ()=>{
