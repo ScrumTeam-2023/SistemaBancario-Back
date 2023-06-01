@@ -44,30 +44,103 @@ exports.defaultAdmin = async()=>{
 
 }
 
-exports.register = async(req,res) =>{
 
-}
-
-exports.login = async(req,res) =>{
+exports.login = async(req,res)=>{
+    try{
     
+        let data = req.body;
+        let credentials = { 
+            username: data.username,
+            password: data.password
+        }
+        let msg = validateData(credentials);
+        if(msg) return res.status(400).send(msg)
+
+        let user = await User.findOne({username: data.username});
+        
+        if(user && await checkPassword(data.password, user.password)) {
+            let userLogged = {
+                name: user.name,
+                username: user.username,
+                role: user.role
+            }
+            let token = await createToken(user)
+            return res.send({message: 'User logged sucessfully', token, userLogged});
+        }
+        return res.status(401).send({message: 'Invalid credentials'});
+    }catch(err){
+        console.error(err);
+        return res.status(500).send({message: 'Error, not logged'});
+    }
 }
 
 exports.save = async(req,res) =>{
-    
+    try {
+        let data = req.body;
+        let dataUser = await User.findOne({_id: data.user})
+        let existUser = await User.findOne({name: data.name})
+        let params = {
+            password: data.password
+        }
+        let validate = validateData(params);
+        if(validate) return res.status(400).send(validate)
+        data.password = await encrypt(data.password)
+
+        let user = new User(data)
+
+        //validate Ingeros
+        if(data.ingresos < 100) return res.status(400).send({mgs: 'Sorry This account is Restricted to be Created'})
+
+        if(existUser) return res.status(403).send({mgs: 'Sorry this Name is Already Taken'})
+        await user.save();
+        return res.status(200).send({msg: `The User has Been Created `,user})
+    } catch (err) {
+        return res.status(500).send({msg: 'Error at Saving',err})
+    }
 }
 
-exports.get = async(req,res) =>{
-    
+exports.getUsers = async(req,res) =>{
+    try {
+        let getUsers = await  User.find().populate()
+        return res.status(200).send(getUsers)
+    } catch (err) {
+        console.error(err)
+        return res.status(500).send({msg: 'Whops! Something went wrong trying to get all users!'})
+    }
 }
 
-exports.getOne = async(req,res) =>{
-    
+exports.getOneUser = async(req,res) =>{
+    try {
+      let userId = req.params.id;
+      let findUser = await User.findOne({_id: userId})
+      if(!findUser) return res.status(404).send({msg:'Sorry We could not find this user'})
+
+      return res.status(200).send({message:`User found!`,findUser})
+    } catch (err) {
+        return res.status(500).send({msg:'Error At get One User',err})  
+    }
 }
 
-exports.edit = async(req,res) =>{
-    
+exports.EditUser = async(req,res) =>{
+    try {
+        //God bless this proyect
+    } catch (err) {
+        return res.status(500).send({msg:'you suck at Editing User',err})  
+    }
 }
 
 exports.delete = async(req,res) =>{
-    
+    try {
+        let idUser = req.params.id;
+
+        let defaultAdmin = await User.findOne({username: 'ADMINB'})
+        if(defaultAdmin._id == idUser) return res.status(400).send({msg:'Cannot delete Administrator'});
+
+        let userDeleted = await User.findOneAndDelete({_id: idUser})
+        if (!userDeleted) return res.status(404).send({msg:'Sorry We could not find this user nor Deleting it'});
+
+            return res.status(200).send({msg: `User Deleted Succesfully`,userDeleted});
+    } catch (err) {
+        return res.status(500).send({msg:'Error At Deleting One User',err})  
+    }
 }
