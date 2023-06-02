@@ -12,7 +12,8 @@ exports.defaultAdmin = async()=>{
         let data = {
             name: 'Narrow Future',
             surname: 'For us',
-            username: `ADMINADMIN`,
+            username: `ADMINB`,
+            password: 'ADMINB',
             location: 'Bank of Center',
             phone: '2012-2938',
             email: 'admin@gmail.com',
@@ -29,7 +30,7 @@ exports.defaultAdmin = async()=>{
         let validate = validateData(params)
         if(validate) return res.status(400).send(validate)
 
-        let ExistUser = await User.findOne({username: 'admin'})
+        let ExistUser = await User.findOne({username: 'ADMINB'})
         if(ExistUser) return console.log('Admin already Engaged')
         data.password = await encrypt(data.password)
         let defAdmin = new User(data)
