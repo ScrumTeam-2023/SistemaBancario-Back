@@ -3,7 +3,7 @@
 const express = require(`express`)
 const api = express.Router();
 const UserController = require('./user.controller');
-const { ensureAuth , isAdmin } = require('../services/authenticated')
+// const { ensureAuth , isAdmin } = require('../services/autheticathed')
 //Validaciones Base
 
 //Rutas
