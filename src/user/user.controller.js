@@ -14,6 +14,7 @@ exports.defaultAdmin = async()=>{
             surname: 'For us',
             username: `ADMINB`,
             password: 'ADMINB',
+            DPI: 212345683671011,
             location: 'Bank of Center',
             phone: '2012-2938',
             email: 'admin@gmail.com',
@@ -111,6 +112,7 @@ exports.getUsers = async(req,res) =>{
 
 exports.getOneUser = async(req,res) =>{
     try {
+      
       let userId = req.params.id;
       let findUser = await User.findOne({_id: userId})
       if(!findUser) return res.status(404).send({msg:'Sorry We could not find this user'})
@@ -121,11 +123,27 @@ exports.getOneUser = async(req,res) =>{
     }
 }
 
-exports.EditUser = async(req,res) =>{
+exports.editUser = async(req,res) =>{
     try {
-        //God bless this proyect
+        let userId = req.params.id;
+        let token = req.user.sub;
+        let data = req.body
+     
+      
+        if(userId != token) return res.status(500).send({message: "No tienes permiso para realizar esta accion"})
+        if(data.password || Object.entries(data).length === 0 || data.DPI) return res.status(400).send({message: 'Have submitted some data that cannot be updated'});
+        let userUpdated = await User.findOneAndUpdate(
+            {_id: token},
+            data,
+            {new: true} 
+        )
+        if(!userUpdated) return res.status(404).send({message: 'User not found and not updated'});
+        return res.send({message: 'User updated', userUpdated})
     } catch (err) {
-        return res.status(500).send({msg:'you suck at Editing User',err})  
+        
+
+        console.error(err)
+        return res.status(500).send({ message: "Error At Edit Account" })
     }
 }
 

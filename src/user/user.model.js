@@ -20,6 +20,11 @@ const userSchema = mongoose.Schema({
         type: String,
         required: true,
     },
+    DPI:{
+        type: Number,
+        required: true,
+        unique: true
+    },
     AccNo: {
         type: Number,
         default:  function() {

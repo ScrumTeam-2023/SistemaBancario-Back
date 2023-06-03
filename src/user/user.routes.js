@@ -7,13 +7,14 @@ const { ensureAuth , isAdmin } = require('../services/autheticathed')
 //Rutas Publicas
 api.get('/getUsers',UserController.getUsers)
 api.get('/getOne/:id',UserController.getOneUser)
-api.delete('/delete/:id',UserController.delete)
+
 api.post('/login',UserController.login)
 //
 //                                      |
 // THIS SON OF A $%#@!H GIVE ME ANXIETY V
-api.put('/EditUser',UserController.EditUser)
+api.put('/editUser/:id',ensureAuth,UserController.editUser)
 //Rutas Exclusivas
-api.post('/save',UserController.save)
-//[ensureAuth, isAdmin] Not use for now
+api.post('/save',[ensureAuth, isAdmin],UserController.save)
+api.delete('/delete/:id',[ensureAuth, isAdmin],UserController.delete)
+//, Not use for now
 module.exports = api
