@@ -1,6 +1,7 @@
 'use strict'
 
 const mongoose = require('mongoose')
+
 exports.connect = async()=>{
     try {
         const uriMongo = `${process.env.URI_MONGO}`

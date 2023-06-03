@@ -1,3 +1,6 @@
+`use Strict`
+
+//generar Token
 const jwt = require('jsonwebtoken');
 
 exports.createToken = async(user)=>{
