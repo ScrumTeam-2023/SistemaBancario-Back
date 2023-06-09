@@ -1,3 +1,6 @@
+'use strict'
+
+
 const jwt = require('jsonwebtoken');
 
 //Función middleware (Barrera lógica)

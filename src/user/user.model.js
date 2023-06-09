@@ -14,15 +14,24 @@ const userSchema = mongoose.Schema({
     username: {
         type: String,
         unique:true,
-        lowercase:true,
         required: true,
+    },
+    password: {
+        type: String,
+        required: true,
+    },
+    DPI:{
+        type: Number,
+        required: true,
+        unique: true
     },
     AccNo: {
         type: Number,
         default:  function() {
-            return Math.floor(Math.random()*16)
+            return Math.floor(Math.random()*1000000000000000)
           },
-        unique: true
+        unique: true,
+        required: false
     },
     location:{
         type: String,
@@ -31,6 +40,7 @@ const userSchema = mongoose.Schema({
     phone: {
         type: String,
         required: true,
+        unique: true
     },
     email: {
         type: String,
@@ -46,7 +56,8 @@ const userSchema = mongoose.Schema({
     },
     balance:{
         type: Number,
-        required: true
+        required: false,
+        default: 0
     },
     movement:{
         type: Number,
@@ -54,8 +65,9 @@ const userSchema = mongoose.Schema({
     },
     role: {
         type: String,
-        required: true,
-        uppercase: true
+        required: false,
+        uppercase: true,
+        default: 'CLIENT'
     }
 
 

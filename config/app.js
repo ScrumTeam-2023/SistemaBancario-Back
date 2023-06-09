@@ -8,7 +8,7 @@ const app = express()
 const port = process.env.PORT || 3000;
 
 const userRoutes = require('../src/user/user.routes')
-
+const depositeRoutes = require('../src/deposit/deposit.routes')
 //Entity routes
 
 app.use(express.urlencoded({extended: false}))
@@ -18,7 +18,8 @@ app.use(helmet())
 app.use(morgan('dev'))
 
 //Rutas Entidades
-
+app.use('/user',userRoutes),
+app.use('/deposit',depositeRoutes)
 //servidor
 
 exports.initServer = ()=>{
