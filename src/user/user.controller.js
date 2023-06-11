@@ -128,12 +128,10 @@ exports.editUser = async(req,res) =>{
         let userId = req.params.id;
         let token = req.user.sub;
         let data = req.body
-     
-      
-        if(userId != token) return res.status(500).send({message: "No tienes permiso para realizar esta accion"})
+      //  if(userId != token) return res.status(500).send({message: "No tienes permiso para realizar esta accion"})
         if(data.password || Object.entries(data).length === 0 || data.DPI) return res.status(400).send({message: 'Have submitted some data that cannot be updated'});
         let userUpdated = await User.findOneAndUpdate(
-            {_id: token},
+            {_id: userId},
             data,
             {new: true} 
         )
@@ -146,6 +144,8 @@ exports.editUser = async(req,res) =>{
         return res.status(500).send({ message: "Error At Edit Account" })
     }
 }
+
+
 
 exports.delete = async(req,res) =>{
     try {
