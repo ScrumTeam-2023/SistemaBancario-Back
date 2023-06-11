@@ -1,6 +1,6 @@
 'use strict'
 
-const Service = require('./services.model')
+const Service = require('./addS.model')
 
 //Obtener todos los servicios
 exports.getService = async (req, res)=>{
