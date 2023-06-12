@@ -1,51 +1,92 @@
-'use stric'
-const Deposit = require('./deposit.model')
-const User = require('../user/user.model')
+const Deposit = require('./deposit.model');
+const User = require('../user/user.model');
+const mongoose = require('mongoose');
 
 
-/// DEPOSITE
+//DEPOSIT
 exports.makeDeposit = async (req, res) => {
-  try {
-    const { sourceAccount, destinationAccount, amount } = req.body;
-
-    // Verificar si la cuenta de origen existe
-    const sourceUser = await User.findOne({ AccNo: sourceAccount });
-    if (!sourceUser) {
-      return res.status(404).json({ success: false, message: 'La cuenta de origen no existe' });
+    try {
+      const { destinationAccount, amount } = req.body;
+  
+      // Actualizar el saldo del usuario
+      const user = await User.findOneAndUpdate(
+        { AccNo: destinationAccount },
+        { $inc: { balance: amount } },
+        { new: true }
+      );
+  
+      // Crear y guardar el depósito
+      const deposit = new Deposit({
+        user: user._id, // Asignar el ID del usuario al campo "user"
+        destinationAccount: destinationAccount,
+        amount: amount,
+        status: 'pending',
+        date: new Date(), // Agregar la fecha actual
+      });
+  
+      await deposit.save();
+  
+      // Enviar respuesta exitosa
+      res.status(200).json({ message: 'Deposit made successfully' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'An error occurred' });
     }
-
-    // Verificar si la cuenta de destino existe
-    const destinationUser = await User.findOne({ AccNo: destinationAccount });
-    if (!destinationUser) {
-      return res.status(404).json({ success: false, message: 'La cuenta de destino no existe' });
+  };
+  
+  
+  
+  //GET LAS FIVE DEPOSITES
+  exports.getDepositsByAccount = async (req, res) => {
+    try {
+      const { accountNumber } = req.params;
+  
+      console.log('Account Number:', accountNumber);
+  
+      const deposits = await Deposit.find({ destinationAccount: { $eq: accountNumber } })
+        .sort({ createdAt: -1 })
+        .limit(5);
+  
+      console.log('Deposits:', deposits);
+  
+      res.status(200).json({ deposits });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'An error occurred' });
     }
+  };
+  
 
-    // Verificar si el usuario de la cuenta de origen tiene suficiente balance
-    if (sourceUser.balance < amount) {
-      return res.status(400).json({ success: false, message: 'Saldo insuficiente en la cuenta de origen' });
+  //CANCEL DEPOSIT
+  
+  
+  exports.cancelDeposit = async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      // Buscar el depósito por su ID
+      const deposit = await Deposit.findById(id);
+  
+      // Verificar si el depósito existe
+      if (!deposit) {
+        return res.status(404).json({ message: 'Deposit not found' });
+      }
+  
+      // Restar el valor del depósito al saldo del usuario
+      const user = await User.findByIdAndUpdate(
+        deposit.user.toString(), // Convertir el ID del usuario a string
+        { $inc: { balance: -deposit.amount } },
+        { new: true }
+      );
+  
+      // Eliminar el depósito
+      await Deposit.deleteOne({ _id: id });
+  
+      // Enviar respuesta exitosa con el balance actualizado
+      res.status(200).json({ message: 'Deposit cancelled successfully', balance: user.balance });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'An error occurred' });
     }
-
-    // Actualizar los balances de las cuentas
-    sourceUser.balance -= amount;
-    destinationUser.balance = Number(destinationUser.balance) + Number(amount);
-
-    // Guardar el depósito en la base de datos
-    const deposit = new Deposit({
-      sourceAccount: sourceAccount,
-      destinationAccount: destinationAccount,
-      amount: amount,
-    });
-    await deposit.save();
-
-    // Guardar los cambios en la base de datos
-    await sourceUser.save();
-    await destinationUser.save();
-
-    return res.status(200).json({ success: true, message: 'Depósito realizado con éxito', deposit: deposit });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: 'Error al hacer el depósito', error: err });
-  }
-};
-
+  };
   

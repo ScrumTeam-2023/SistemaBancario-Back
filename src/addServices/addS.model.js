@@ -22,6 +22,12 @@ const serviceSchema = mongoose.Schema({
         type: String,
         require: true
     },
+    DPI:{
+        type: Number,
+        ref: 'User',
+        require: true
+
+    }
     
 });
 

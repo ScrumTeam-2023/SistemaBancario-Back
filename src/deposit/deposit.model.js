@@ -1,11 +1,8 @@
-'use stric'
+'use strict';
+
 const mongoose = require('mongoose');
 
 const depositSchema = mongoose.Schema({
-  sourceAccount: {
-    type: Number,
-    required: true,
-  },
   destinationAccount: {
     type: Number,
     required: true,
@@ -14,10 +11,23 @@ const depositSchema = mongoose.Schema({
     type: Number,
     required: true,
   },
-  date: {
+  depositDate: {
     type: Date,
     default: Date.now,
   },
+  completed: {
+    type: String,
+    enum: ['completado', 'cancelled'],
+    default: 'completado',
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
 });
 
+
 module.exports = mongoose.model('Deposit', depositSchema);
+
+

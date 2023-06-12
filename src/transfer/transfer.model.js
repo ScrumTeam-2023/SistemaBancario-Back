@@ -1,28 +1,28 @@
-'use strict'
-
+'use stric'
 const mongoose = require('mongoose');
 
-const transferSchema = mongoose.Schema({
-    
-    numberAccount:{
-        type: Number,
-        required: true,
-        unique: true
-    },
-
-    dpi:{
-        type: Number,
-        require: true
-    },
-    date:{
-        type: Date,
-        required: true
-    },
-    saldo:{
-        type: Number,
-        require: true
-    },
-    
+const tranferSchema = mongoose.Schema({
+  sourceAccount: {
+    type: Number,
+    required: true,
+  },
+  destinationAccount: {
+    type: Number,
+    required: true,
+  },
+  amount: {
+    type: Number,
+    required: true,
+  },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
 });
 
-module.exports = mongoose.model('Transfer', transferSchema)
+
+module.exports = mongoose.model('Transfer', tranferSchema);
