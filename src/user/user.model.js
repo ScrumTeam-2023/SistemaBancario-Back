@@ -21,7 +21,7 @@ const userSchema = mongoose.Schema({
         required: true,
     },
     DPI:{
-        type: Number,
+        type: String,
         required: true,
         unique: true
     },
