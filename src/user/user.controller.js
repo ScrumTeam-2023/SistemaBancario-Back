@@ -103,8 +103,9 @@ exports.save = async(req,res) =>{
 
 exports.getUsers = async(req,res) =>{
     try {
-        let getUsers = await User.find()
+        let getUsers = await User.find({role: 'CLIENT'})
         return res.status(200).send({getUsers}) // referenciar en front tambien
+        
     } catch (err) {
         console.error(err)
         return res.status(500).send({msg: 'Whops! Something went wrong trying to get all users!'})
