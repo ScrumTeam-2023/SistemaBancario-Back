@@ -138,7 +138,8 @@ exports.editUser = async(req,res) =>{
             {new: true} 
         )
         if(!userUpdated) return res.status(404).send({message: 'User not found and not updated'});
-        return res.send({userUpdated})
+        return res.send({message:'User Updated!',userUpdated})
+        //usar message
     } catch (err) {
         
 
@@ -159,7 +160,7 @@ exports.delete = async(req,res) =>{
         let userDeleted = await User.findOneAndDelete({_id: idUser})
         if (!userDeleted) return res.status(404).send({msg:'Sorry We could not find this user nor Deleting it'});
 
-            return res.status(200).send.JSON.stringify({userDeleted});
+            return res.status(200).send({userDeleted});
     } catch (err) {
         return res.status(500).send({msg:'Error At Deleting One User',err})  
     }
