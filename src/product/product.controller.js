@@ -11,16 +11,16 @@ exports.createProduct = async(req, res)=>{
     try {
         
     let data = req.body;
-    let existUser = await User.findOne({_id: data.user})
-    if(!existUser){
+    /*let existUser = await User.findOne({_id: data.user})
+    /*if(!existUser){
         return res.status(404).send({message: 'User not found'})
-    }
+    }*/
     let product = new Product(data);
     await product.save()
-    return res.send({message: 'Reservation saved sucessfully'})
+    return res.send({message: 'Product saved sucessfully'})
     }catch (err) {
         console.log(err)
-        return res.status(500).send({message: 'Error creating Product !!!'})
+      //  return res.status(500).send({message: 'Error creating Product !!!'})
     }
 }
 
@@ -70,5 +70,50 @@ exports.updateProduct = async(req, res)=>{
     } catch (err) {
         console.log(err)
         return res.status(500).send({message: 'Error updating product !!'})
+    }
+}
+exports.deleteProduct = async(req, res)=>{
+    try{
+        //Capturar el ID del Servicio
+        let productId = req.params.id;
+        //Eliminarlo
+        let deleteProduct = await Product.deleteOne({_id: productId})
+        if(deleteProduct.deleteCount === 0)return res.status(404).send({message: 'Service not found, not deleted'});
+        return res.send({message: 'Service deleted'})
+    }catch(err){
+        console.error(err);
+        return res.status(500).send({message: 'Error deleting service'});
+    }
+}
+
+exports.compra = async(req, res) =>{
+    try {
+        let productId = req.params.id;
+        let compra = req.body;
+        let product = await Product.findOne({_id: productId})
+        if(!product){
+            return res.status(400).send({message: 'Product not found'})
+        }
+        let u = product.user;
+        let user = await User.findOne(u)
+        if(product.stock >= compra.compra){
+            product.stock = product.stock - compra.compra;   
+        }else{
+            res.send({message: 'No hay suficientes productos'})
+        }
+        if(user.balance >= product.price){
+            user.balance = user.balance - product.price;
+        }else{
+            res.send({message: 'No hay suficiente presupuesto'})
+        }
+        if(product.stock == 0){
+            res.send({message: 'AGOTADO!!', product})
+        }
+        this.updateProduct.stock = product.stock;
+        user.save();
+        product.save();
+        res.send({message: 'Se a cambiado el stock y el precio', product, user})
+    } catch (err) {
+        console.log(err)
     }
 }
