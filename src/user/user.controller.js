@@ -13,7 +13,7 @@ exports.defaultAdmin = async()=>{
             name: 'Narrow Future',
             surname: 'For us',
             username: `ADMINB`,
-            password: 'ADMINB',
+            password: '123',
             DPI: 212345683671011,
             location: 'Bank of Center',
             phone: '2012-2938',
@@ -63,7 +63,8 @@ exports.login = async(req,res)=>{
             let userLogged = {
                 name: user.name,
                 username: user.username,
-                role: user.role
+                role: user.role,
+                AccNo: user.AccNo
             }
             let token = await createToken(user)
             return res.send({message: 'User logged sucessfully', token, userLogged});
@@ -102,13 +103,15 @@ exports.save = async(req,res) =>{
 
 exports.getUsers = async(req,res) =>{
     try {
-        let getUsers = await  User.find().populate()
-        return res.status(200).send(getUsers)
+        let getUsers = await User.find({role: 'CLIENT'})
+        return res.status(200).send({getUsers}) // referenciar en front tambien
+        
     } catch (err) {
         console.error(err)
         return res.status(500).send({msg: 'Whops! Something went wrong trying to get all users!'})
     }
 }
+//s
 
 exports.getOneUser = async(req,res) =>{
     try {
@@ -117,7 +120,7 @@ exports.getOneUser = async(req,res) =>{
       let findUser = await User.findOne({_id: userId})
       if(!findUser) return res.status(404).send({msg:'Sorry We could not find this user'})
 
-      return res.status(200).send({message:`User found!`,findUser})
+      return res.status(200).send({findUser})
     } catch (err) {
         return res.status(500).send({msg:'Error At get One User',err})  
     }
@@ -128,17 +131,16 @@ exports.editUser = async(req,res) =>{
         let userId = req.params.id;
         let token = req.user.sub;
         let data = req.body
-     
-      
-        if(userId != token) return res.status(500).send({message: "No tienes permiso para realizar esta accion"})
+      //  if(userId != token) return res.status(500).send({message: "No tienes permiso para realizar esta accion"})
         if(data.password || Object.entries(data).length === 0 || data.DPI) return res.status(400).send({message: 'Have submitted some data that cannot be updated'});
         let userUpdated = await User.findOneAndUpdate(
-            {_id: token},
+            {_id: userId},
             data,
             {new: true} 
         )
         if(!userUpdated) return res.status(404).send({message: 'User not found and not updated'});
-        return res.send({message: 'User updated', userUpdated})
+        return res.send({message:'User Updated!',userUpdated})
+        //usar message
     } catch (err) {
         
 
@@ -146,6 +148,8 @@ exports.editUser = async(req,res) =>{
         return res.status(500).send({ message: "Error At Edit Account" })
     }
 }
+
+
 
 exports.delete = async(req,res) =>{
     try {
@@ -157,7 +161,7 @@ exports.delete = async(req,res) =>{
         let userDeleted = await User.findOneAndDelete({_id: idUser})
         if (!userDeleted) return res.status(404).send({msg:'Sorry We could not find this user nor Deleting it'});
 
-            return res.status(200).send({msg: `User Deleted Succesfully`,userDeleted});
+            return res.status(200).send({userDeleted});
     } catch (err) {
         return res.status(500).send({msg:'Error At Deleting One User',err})  
     }
