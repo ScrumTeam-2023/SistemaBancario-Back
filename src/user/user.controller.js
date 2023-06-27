@@ -150,6 +150,26 @@ exports.editUser = async(req,res) =>{
 }
 
 
+exports.editProfile = async(req,res) =>{
+    try {
+        let userId = req.params.id;
+        let token = req.user.sub;
+        let data = req.body
+        if(data.password || data.DPI || Object.entries(data).length === 0) return res.status(400).send({ message: "Some fields cannot be sign"})
+        let userUpdated = await User.findOneAndUpdate(
+            {_id: token},
+            data,{new:true}
+        )
+        if(!userUpdated) return res.status(404).send({ message: "User not found Nor updated"})
+        return res.send({userUpdated})
+
+    } catch (err) {
+        console.error(err)
+        return res.status(500).send({message: "Error At Edit Profile"})
+        
+    }
+}
+
 
 exports.delete = async(req,res) =>{
     try {
