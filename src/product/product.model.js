@@ -19,13 +19,13 @@ const productSchema = mongoose.Schema({
         required: true
     },
     stock:{
-        type: String,
+        type: Number,
         require: true
     },
     user:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false
     }
 });
 module.exports = mongoose.model('Product', productSchema)
