@@ -62,9 +62,12 @@ exports.login = async(req,res)=>{
         if(user && await checkPassword(data.password, user.password)) {
             let userLogged = {
                 name: user.name,
+                surname: user.surname,
                 username: user.username,
                 role: user.role,
-                AccNo: user.AccNo
+                AccNo: user.AccNo,
+                phone: user.phone,
+                email: user.email
             }
             let token = await createToken(user)
             return res.send({message: 'User logged sucessfully', token, userLogged});
@@ -101,6 +104,8 @@ exports.save = async(req,res) =>{
     }
 }
 
+
+
 exports.getUsers = async(req,res) =>{
     try {
         let getUsers = await User.find({role: 'CLIENT'})
@@ -111,7 +116,7 @@ exports.getUsers = async(req,res) =>{
         return res.status(500).send({msg: 'Whops! Something went wrong trying to get all users!'})
     }
 }
-//s
+
 
 exports.getOneUser = async(req,res) =>{
     try {
@@ -125,6 +130,20 @@ exports.getOneUser = async(req,res) =>{
         return res.status(500).send({msg:'Error At get One User',err})  
     }
 }
+
+exports.getProfile =async(req,res)=> {
+    try {
+let userToken = req.user                                        //ocultar cualquier dato 1 mostrar / 0 No mostrar
+        let findToken = await User.findOne({_id: userToken.sub},{password: 0})
+        if(!findToken) return res.status(404).send({message: 'Profile not found'})
+        return res.send({findToken})
+    } catch (err) {
+        console.error(err)
+        return res.status(500).send({message:'Error Trying to get The profile'})
+        
+    }
+}
+
 
 exports.editUser = async(req,res) =>{
     try {

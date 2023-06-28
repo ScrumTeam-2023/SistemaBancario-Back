@@ -6,6 +6,9 @@ const UserController = require('./user.controller');
 const { ensureAuth , isAdmin } = require('../services/autheticathed')
 //Rutas Publicas
 api.get('/getUsers',UserController.getUsers)
+
+api.get('/profile',ensureAuth,UserController.getProfile)
+
 api.get('/getOne/:id',UserController.getOneUser)
 
 api.post('/login',UserController.login)
