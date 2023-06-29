@@ -2,12 +2,15 @@
 
 const express = require('express');
 const api = express.Router();
+const { isAdmin, ensureAuth } = require('../Services/autheticathed')
 const addSController = require('./addS.controller');
 
-api.get('/get', addSController.getService);
-api.get('/getBy/:id', addSController.getServiceBy);
-api.post('/add', addSController.createService);
-api.put('/update/:id', addSController.updateService);
-api.delete('/delete/:id', addSController.deleteService);
+
+api.get('/get', [ensureAuth], addSController.getService);
+api.get('/getBy/:id', [ensureAuth], addSController.getServiceBy);
+api.post('/add', [ensureAuth, isAdmin], addSController.createService);
+api.put('/update/:id', [ensureAuth, isAdmin], addSController.updateService);
+api.delete('/delete/:id', [ensureAuth, isAdmin], addSController.deleteService);
+api.post('/acquire/:id', [ensureAuth], addSController.adquirirService)
 
 module.exports = api;
