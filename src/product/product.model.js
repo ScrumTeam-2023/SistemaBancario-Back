@@ -13,7 +13,6 @@ const productSchema = mongoose.Schema({
         type: String,
         require: true
     },
-
     price:{
         type: Number,
         required: true
@@ -21,11 +20,6 @@ const productSchema = mongoose.Schema({
     stock:{
         type: Number,
         require: true
-    },
-    user:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: false
     }
 });
 module.exports = mongoose.model('Product', productSchema)

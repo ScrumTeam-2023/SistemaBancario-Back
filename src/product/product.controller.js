@@ -2,6 +2,7 @@
 
 const Product = require('./product.model')
 const User = require('../user/user.model')
+const Compra = require('./product.model')
 
 exports.test = async(req, res)=>{
     return res.send({message: 'Test is running'})
@@ -11,16 +12,12 @@ exports.createProduct = async(req, res)=>{
     try {
         
     let data = req.body;
-    /*let existUser = await User.findOne({_id: data.user})
-    /*if(!existUser){
-        return res.status(404).send({message: 'User not found'})
-    }*/
     let product = new Product(data);
     await product.save()
     return res.send({message: 'Product saved sucessfully'})
     }catch (err) {
         console.log(err)
-      //  return res.status(500).send({message: 'Error creating Product !!!'})
+        return res.status(500).send({message: 'Error creating Product !!!'})
     }
 }
 
@@ -78,11 +75,11 @@ exports.deleteProduct = async(req, res)=>{
         let productId = req.params.id;
         //Eliminarlo
         let deleteProduct = await Product.deleteOne({_id: productId})
-        if(deleteProduct.deleteCount === 0)return res.status(404).send({message: 'Service not found, not deleted'});
-        return res.send({message: 'Service deleted'})
+        if(deleteProduct.deleteCount === 0)return res.status(404).send({message: 'Product not found, not deleted'});
+        return res.send({message: 'Product deleted'})
     }catch(err){
         console.error(err);
-        return res.status(500).send({message: 'Error deleting service'});
+        return res.status(500).send({message: 'Error deleting product'});
     }
 }
 
@@ -90,19 +87,20 @@ exports.compra = async(req, res) =>{
     try {
         let productId = req.params.id;
         let compra = req.body;
+        const {sub} = req.user
         let product = await Product.findOne({_id: productId})
         if(!product){
             return res.status(400).send({message: 'Product not found'})
         }
-        let u = product.user;
-        let user = await User.findOne(u)
+        let user = await User.findOne({_id: sub})
         if(product.stock >= compra.compra){
             product.stock = product.stock - compra.compra;   
         }else{
             res.send({message: 'No hay suficientes productos'})
         }
         if(user.balance >= product.price){
-            user.balance = user.balance - product.price;
+            let pr = product.price * compra.compra
+            user.balance = user.balance - pr;
         }else{
             res.send({message: 'No hay suficiente presupuesto'})
         }
@@ -110,9 +108,17 @@ exports.compra = async(req, res) =>{
             res.send({message: 'AGOTADO!!', product})
         }
         this.updateProduct.stock = product.stock;
+
+        /*const comp = new Compra({
+            user: user,
+            product: product,
+        });
+        await comp.save();*/
+
         user.save();
         product.save();
-        res.send({message: 'Se a cambiado el stock y el precio', product, user})
+
+        res.send({message: 'Se a cambiado el stock y el precio', product, user}) 
     } catch (err) {
         console.log(err)
     }
