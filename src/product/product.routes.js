@@ -2,7 +2,7 @@
 
 const express = require('express')
 const api = express.Router()
-const {ensureAuth} = require('../Services/autheticathed')
+const {ensureAuth} = require('../services/autheticathed')
 const productController = require('./product.controller')
 
 api.get('/test', productController.test);

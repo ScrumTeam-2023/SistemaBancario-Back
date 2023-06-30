@@ -2,7 +2,6 @@
 
 const Product = require('./product.model')
 const User = require('../user/user.model')
-const Compra = require('./product.model')
 
 exports.test = async(req, res)=>{
     return res.send({message: 'Test is running'})

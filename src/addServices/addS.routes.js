@@ -2,7 +2,7 @@
 
 const express = require('express');
 const api = express.Router();
-const { isAdmin, ensureAuth } = require('../Services/autheticathed')
+const { isAdmin, ensureAuth } = require('../services/autheticathed')
 const addSController = require('./addS.controller');
 
 

@@ -11,6 +11,7 @@ const userRoutes = require('../src/user/user.routes')
 const addSRoutes = require('../src/addServices/addS.routes')
 const depositeRoutes = require('../src/deposit/deposit.routes')
 const tranferRoutes = require('../src/transfer/transfer.routes')
+const productRoutes = require('../src/product/product.routes')
 //Entity routes
 
 app.use(express.urlencoded({extended: false}))
@@ -24,6 +25,7 @@ app.use('/user',userRoutes)
 app.use('/addServices',addSRoutes)
 app.use('/deposit',depositeRoutes)
 app.use('/transfer',tranferRoutes)
+app.use('/product',productRoutes)
 //servidor
 
 exports.initServer = ()=>{
