@@ -3,7 +3,7 @@
 const mongoose = require('mongoose');
 
 const depositSchema = mongoose.Schema({
-  destinationAccount: {
+  noCuenta: {
     type: Number,
     required: true,
   },
@@ -11,23 +11,14 @@ const depositSchema = mongoose.Schema({
     type: Number,
     required: true,
   },
-  depositDate: {
-    type: Date,
-    default: Date.now,
+  date: {
+    type: Number,
   },
-  completed: {
-    type: String,
-    enum: ['completado', 'cancelled'],
-    default: 'completado',
-  },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+  status: {
+    type: String,  // Campo de tipo String para almacenar el estado del depósito
     required: true,
   },
-});
-
+}, { versionKey: false });
 
 module.exports = mongoose.model('Deposit', depositSchema);
-
 

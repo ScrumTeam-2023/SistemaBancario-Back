@@ -7,5 +7,7 @@ const { ensureAuth , isAdmin } = require('../services/autheticathed')
 
 api.post('/addTransfer',TransferController.makeTransfer);
 api.get('/get/:userId', TransferController.getTransfers);
+api.delete('/cancel/:id', TransferController.cancelTransfer);
+api.get('/getByAccount')
 
 module.exports = api

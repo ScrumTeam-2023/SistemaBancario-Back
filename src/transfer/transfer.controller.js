@@ -6,60 +6,87 @@ const User = require('../user/user.model')
 
 exports.makeTransfer = async (req, res) => {
   try {
-    const { sourceAccount, destinationAccount, amount } = req.body;
+    let data = req.body;
+    data.date = Date.now();
 
     // Verificar si la cuenta de origen existe
-    const sourceUser = await User.findOne({ AccNo: sourceAccount });
-    if (!sourceUser) {
-      return res.status(404).json({ success: false, message: 'La cuenta de origen no existe' });
+    let existSourceAccount = await User.findOne({ AccNo: data.sourceAccount });
+    if (!existSourceAccount) {
+      return res.status(400).send({ message: 'Cuenta de origen no encontrada. Volver a intentar' });
     }
 
     // Verificar si la cuenta de destino existe
-    const destinationUser = await User.findOne({ AccNo: destinationAccount });
-    if (!destinationUser) {
-      return res.status(404).json({ success: false, message: 'La cuenta de destino no existe' });
+    let existDestinationAccount = await User.findOne({ AccNo: data.destinationAccount });
+    if (!existDestinationAccount) {
+      return res.status(400).send({ message: 'Cuenta de destino no encontrada. Volver a intentar' });
     }
 
-    // Verificar si el usuario de la cuenta de origen tiene suficiente balance
-    if (sourceUser.balance < amount) {
-      return res.status(400).json({ success: false, message: 'Saldo insuficiente en la cuenta de origen' });
+    // Verificar si el saldo de la cuenta de origen es suficiente
+    if (existSourceAccount.balance < data.amount) {
+      return res.status(400).send({ message: 'Saldo insuficiente en la cuenta de origen' });
     }
 
-    // Verificar límite de transferencia diario
-    const today = new Date().setHours(0, 0, 0, 0);
-    const totalTransfersToday = await Transfer.countDocuments({
-      user: sourceUser._id,
-      date: { $gte: today },
-    });
-    const dailyLimit = 10000;
-    const remainingLimit = dailyLimit - totalTransfersToday;
-    if (amount > remainingLimit) {
-      return res.status(400).json({ success: false, message: 'Se ha excedido el límite de transferencia diario' });
+    // Verificar si el monto no excede Q2000
+    const transferAmount = Number(data.amount);
+    if (transferAmount > 2000) {
+      return res.status(400).send({ message: 'No puede transferir más de Q2000' });
     }
 
-    // Actualizar los balances de las cuentas
-    sourceUser.balance -= Number(amount);
-    destinationUser.balance += Number(amount);
+    // Obtener la fecha actual
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // Establecer la hora en 00:00:00
 
-    // Crear la transferencia en la base de datos
-    const transfer = new Transfer({
-      sourceAccount: sourceAccount,
-      destinationAccount: destinationAccount,
-      amount: Number(amount),
-      user: destinationUser._id,
-    });
+    // Obtener la fecha de inicio y fin del día actual
+    const startOfDay = currentDate.getTime();
+    const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
+
+    // Calcular el total de transferencias del día para la cuenta de origen
+    const totalTransfers = await Transfer.aggregate([
+      {
+        $match: {
+          sourceAccount: existSourceAccount.AccNo,
+          date: { $gte: startOfDay, $lt: endOfDay }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    const currentTotal = totalTransfers.length > 0 ? totalTransfers[0].totalAmount : 0;
+    const newTotal = currentTotal + transferAmount;
+
+    // Verificar si se excede el límite de transferencia diaria de 10,000
+    if (newTotal > 10000) {
+      return res.status(400).send({ message: 'Se ha excedido el límite de transferencia diaria' });
+    }
+
+    // Actualizar el saldo de la cuenta de origen
+    let newSourceBalance = existSourceAccount.balance - transferAmount;
+    await User.findOneAndUpdate({ AccNo: data.sourceAccount }, { balance: newSourceBalance, $inc: { movement: 1 } });
+
+    // Actualizar el saldo de la cuenta de destino
+    let newDestinationBalance = existDestinationAccount.balance + transferAmount;
+    await User.findOneAndUpdate({ AccNo: data.destinationAccount }, { balance: newDestinationBalance, $inc: { movement: 1 } });
+
+    // Crear la transferencia con la fecha
+    let transfer = new Transfer(data);
     await transfer.save();
 
-    // Guardar los cambios en la base de datos
-    await sourceUser.save();
-    await destinationUser.save();
-
-    return res.status(200).json({ success: true, message: 'Transferencia realizada con éxito', transfer: transfer });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: 'Error al realizar la transferencia', error: err });
+    return res.send({ message: 'Transferencia exitosa' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ message: 'No se puede completar la transferencia' });
   }
 };
+
+
+
+
+
 
 
 //get TRANSFER
@@ -85,3 +112,62 @@ exports.getTransfers = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Error al obtener las transferencias', error: err });
   }
 };
+
+
+//CANCEL TRANSFER
+
+exports.cancelTransfer = async (req, res) => {
+  try {
+    const transferId = req.params.id;
+
+    const transferencia = await Transfer.findOne({ _id: transferId });
+    if (!transferencia) {
+      return res.status(404).send({ message: 'No se encuentra el número de transferencia' });
+    }
+
+    const tiempo = Math.floor(transferencia.date + (1000 * 60 * 1));
+
+    const sourceAccount = await User.findOne({ AccNo: transferencia.sourceAccount });
+    const destinationAccount = await User.findOne({ AccNo: transferencia.destinationAccount });
+
+    if (!sourceAccount || !destinationAccount) {
+      return res.status(404).send({ message: 'Cuenta(s) no encontrada(s)' });
+    }
+
+    if (Date.now() <= tiempo) {
+      let newSourceBalance = sourceAccount.balance + transferencia.amount;
+      let newDestinationBalance = destinationAccount.balance - transferencia.amount;
+
+      await User.findOneAndUpdate({ AccNo: transferencia.sourceAccount }, { balance: newSourceBalance });
+      await User.findOneAndUpdate({ AccNo: transferencia.destinationAccount }, { balance: newDestinationBalance });
+
+      return res.send({ message: 'La transferencia se ha cancelado' });
+    }
+
+    return res.send({ message: 'El tiempo de cancelación ha expirado' });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: 'Ocurrió un error' });
+  }
+};
+
+
+//get by account
+  exports.getTransfersByAccount = async (req, res) => {
+    try {
+      const { accountNumber } = req.params;
+
+      // Buscar las transferencias donde la cuenta de origen o destino coincida con el número de cuenta proporcionado
+      const transfers = await Transfer.find({
+        $or: [{ sourceAccount: accountNumber }, { destinationAccount: accountNumber }]
+      });
+
+      res.send(transfers);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: 'Error al obtener las transferencias' });
+    }
+  };
+
+  
