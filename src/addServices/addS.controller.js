@@ -1,97 +1,123 @@
 'use strict'
 
 const Service = require('./addS.model')
+const User = require('../user/user.model')
+
 
 //Obtener todos los servicios
-exports.getService = async (req, res)=>{
-    try{
+exports.getService = async(req, res) => {
+    try {
         let service = await Service.find().populate();
-        return res.send({message: 'Services found', service});
-    }catch(err){
+        return res.send({ message: 'Services found', service });
+    } catch (err) {
         console.error(err);
-        return res.status(500).send({message: 'Error getting services'});
+        return res.status(500).send({ message: 'Error getting services' });
     }
 };
 
 //Obtener todos los sevicios por ID
-exports.getServiceBy = async(req, res)=>{
-    try{
+exports.getServiceBy = async(req, res) => {
+    try {
         let serviceId = req.params.id;
-        let service = await Service.findById({_id: serviceId})
-        if(!service) return res.status(418).send({message: 'Service not found'});
+        let service = await Service.findById({ _id: serviceId })
+        if (!service) return res.status(418).send({ message: 'Service not found' });
         return res.send(service)
-    }catch(err){
+    } catch (err) {
         console.error(err)
-        return res.status(500).send({message: 'Error getting Service for ID'});
+        return res.status(500).send({ message: 'Error getting Service for ID' });
     }
 }
 
 // Create service
-exports.createService = async(req, res)=>{
-    try{
+exports.createService = async(req, res) => {
+    try {
         let data = req.body;
         // Validar Duplicados
-        let existService = await Service.findOne({name: data.name});
-        if(existService){
-            return res.status(409).send({message: 'Service already exist'});
+        let existService = await Service.findOne({ name: data.name });
+        if (existService) {
+            return res.status(409).send({ message: 'Service already exist' });
         }
         let service = new Service(data);
         await service.save();
-        return res.status(201).send({message: 'Service created successfully'});
-    }catch(error){
+        return res.status(201).send({ message: 'Service created successfully' });
+    } catch (error) {
         console.error(error);
-        return res.status(500).send({message:'Error creating service'});
+        return res.status(500).send({ message: 'Error creating service' });
     }
 }
 
 //Actulaizar un servicio existente
-exports.updateService = async (req, res) =>{
-    try{
+exports.updateService = async(req, res) => {
+    try {
         //Obtener el ID del servicio a actualizar
         const serviceId = req.params.id;
-        
+
         //Obtener los datos del formulario  (body)
         const data = req.body;
 
         //Buscar si existe algúnn servicio con el mismo nombre
-         const existingService = await Service.findOne({ name: data.name}).lean();
-        
-         if(existingService){
-            //Validar que el ID que llega tenga el mismo nombre del que va actualizar
-            if(existingService.id != serviceId){
-                return res.send({ message: 'Service already created'});
-            }
-         }
+        const existingService = await Service.findOne({ name: data.name }).lean();
 
-         //Actualizar el servicio
-         const updateService = await Service.findOneAndUpdate(
-           { _id: serviceId},
-           data,
-           { new: true}
-        );
-        
-        if (!updateService){
-            return res.status(404).send({ message: 'Service not found and not update'});
+        if (existingService) {
+            //Validar que el ID que llega tenga el mismo nombre del que va actualizar
+            if (existingService.id != serviceId) {
+                return res.send({ message: 'Service already created' });
+            }
         }
-        return res.send({ message: 'Service update', updateService})
-    }catch(err){
+
+        //Actualizar el servicio
+        const updateService = await Service.findOneAndUpdate({ _id: serviceId },
+            data, { new: true }
+        );
+
+        if (!updateService) {
+            return res.status(404).send({ message: 'Service not found and not update' });
+        }
+        return res.send({ message: 'Service update', updateService })
+    } catch (err) {
         console.error(err);
-        return res.status(500).send({ message: 'Error updating service'});
+        return res.status(500).send({ message: 'Error updating service' });
     }
 };
 
 //-------------EliminarServicio---------------------------
 
-exports.deleteService = async(req, res)=>{
-    try{
+exports.deleteService = async(req, res) => {
+    try {
         //Capturar el ID del Servicio
         let serviceId = req.params.id;
         //Eliminarlo
-        let deleteService = await Service.deleteOne({_id: serviceId})
-        if(deleteService.deleteCount === 0)return res.status(404).send({message: 'Service not found, not deleted'});
-        return res.send({message: 'Service deleted'})
-    }catch(err){
+        let deleteService = await Service.deleteOne({ _id: serviceId })
+        if (deleteService.deleteCount === 0) return res.status(404).send({ message: 'Service not found, not deleted' });
+        return res.send({ message: 'Service deleted' })
+    } catch (err) {
         console.error(err);
-        return res.status(500).send({message: 'Error deleting service'});
+        return res.status(500).send({ message: 'Error deleting service' });
     }
+}
+
+//----------Adquirir un servicio---------------------
+
+exports.adquirirService = async(req, res) => {
+    try {
+        let serviceId = req.params.id;
+        const { sub } = req.user;
+        let service = await Service.findOne({ _id: serviceId });
+        const user = await User.findOne({ _id: sub });
+        if (!service) {
+            return res.status(404).send({ message: 'Service not found' })
+        }
+        if (service.state == 'NO DISPONIBLE')
+            return res.status(400).send({ message: 'The service is not available in this moment' })
+        if (service.price > user.balance)
+            return res.status(400).send({ message: 'You do nott have enough money to purchase this service' });
+        await User.updateOne({ _id: sub }, {
+            $inc: { balance: Number(service.price * -1) }
+        }, { new: true })
+        return res.send({ message: 'The service was successfully purchased' })
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({ message: 'Error al adquirir un servicio' })
+    }
+
 }
