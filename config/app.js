@@ -10,6 +10,7 @@ const port = process.env.PORT || 3000;
 const userRoutes = require('../src/user/user.routes')
 const addSRoutes = require('../src/addServices/addS.routes')
 const depositeRoutes = require('../src/deposit/deposit.routes')
+const tranferRoutes = require('../src/transfer/transfer.routes')
 //Entity routes
 
 app.use(express.urlencoded({extended: false}))
@@ -22,6 +23,7 @@ app.use(morgan('dev'))
 app.use('/user',userRoutes)
 app.use('/addServices',addSRoutes)
 app.use('/deposit',depositeRoutes)
+app.use('/transfer',tranferRoutes)
 //servidor
 
 exports.initServer = ()=>{
