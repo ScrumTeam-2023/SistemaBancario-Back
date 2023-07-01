@@ -1,12 +1,9 @@
-'use stric'
+'use strict';
+
 const mongoose = require('mongoose');
 
 const depositSchema = mongoose.Schema({
-  sourceAccount: {
-    type: Number,
-    required: true,
-  },
-  destinationAccount: {
+  noCuenta: {
     type: Number,
     required: true,
   },
@@ -15,9 +12,13 @@ const depositSchema = mongoose.Schema({
     required: true,
   },
   date: {
-    type: Date,
-    default: Date.now,
+    type: Number,
   },
-});
+  status: {
+    type: String,  // Campo de tipo String para almacenar el estado del depósito
+    required: true,
+  },
+}, { versionKey: false });
 
 module.exports = mongoose.model('Deposit', depositSchema);
+

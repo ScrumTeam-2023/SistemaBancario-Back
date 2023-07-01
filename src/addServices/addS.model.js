@@ -27,6 +27,17 @@ const serviceSchema = mongoose.Schema({
         ref: 'User',
         require: true
 
+    },
+    state:{
+        type: String,
+        enum: ['DISPONIBLE','NO DISPONIBLE'],
+        default:'DISPONIBLE',
+        uppercase: true 
+    },
+    balance:{
+        type: Number,
+        required: false,
+        default: 0
     }
     
 });

@@ -1,51 +1,182 @@
-'use stric'
-const Deposit = require('./deposit.model')
-const User = require('../user/user.model')
+const Deposit = require('./deposit.model');
+const User = require('../user/user.model');
 
 
 /// DEPOSITE
+
 exports.makeDeposit = async (req, res) => {
   try {
-    const { sourceAccount, destinationAccount, amount } = req.body;
+    const { noCuenta, amount } = req.body;
 
-    // Verificar si la cuenta de origen existe
-    const sourceUser = await User.findOne({ AccNo: sourceAccount });
-    if (!sourceUser) {
-      return res.status(404).json({ success: false, message: 'La cuenta de origen no existe' });
+    const user = await User.findOne({ AccNo: noCuenta });
+    if (!user) {
+      return res.status(400).send({ message: 'Cuenta no encontrada. Vuelve a intentarlo' });
     }
 
-    // Verificar si la cuenta de destino existe
-    const destinationUser = await User.findOne({ AccNo: destinationAccount });
-    if (!destinationUser) {
-      return res.status(404).json({ success: false, message: 'La cuenta de destino no existe' });
-    }
+    const newSaldo = user.balance + Number(amount);
+    const updatedAccount = await User.findByIdAndUpdate(
+      user._id,
+      { balance: newSaldo },
+      { new: true }
+    );
 
-    // Verificar si el usuario de la cuenta de origen tiene suficiente balance
-    if (sourceUser.balance < amount) {
-      return res.status(400).json({ success: false, message: 'Saldo insuficiente en la cuenta de origen' });
-    }
-
-    // Actualizar los balances de las cuentas
-    sourceUser.balance -= amount;
-    destinationUser.balance = Number(destinationUser.balance) + Number(amount);
-
-    // Guardar el depósito en la base de datos
-    const deposit = new Deposit({
-      sourceAccount: sourceAccount,
-      destinationAccount: destinationAccount,
-      amount: amount,
+    const deposito = new Deposit({
+      noCuenta,
+      amount,
+      date: Date.now(),
+      status: 'completo' // Establecer el estado como "completado"
     });
-    await deposit.save();
 
-    // Guardar los cambios en la base de datos
-    await sourceUser.save();
-    await destinationUser.save();
+    await deposito.save();
 
-    return res.status(200).json({ success: true, message: 'Depósito realizado con éxito', deposit: deposit });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ success: false, message: 'Error al hacer el depósito', error: err });
+    // Aumentar el movimiento en la cuenta de destino
+    const newMovement = user.movement + 1;
+    await User.findByIdAndUpdate(
+      user._id,
+      { movement: newMovement },
+      { new: true }
+    );
+
+    return res.send({ message: 'Depósito exitoso' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ message: 'No se puede completar el depósito' });
   }
 };
 
+  // GET MY DEPOSIT
+  exports.getDepositsByUserId = async (req, res) => {
+    try {
+      const userId = req.params.id;
+      
+      // Buscar el usuario por su ID
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).send({ message: 'Usuario no encontrado' });
+      }
+  
+      // Obtener los depósitos que coincidan con el número de cuenta del usuario
+      const deposits = await Deposit.find({ noCuenta: user.AccNo });
+  
+      return res.send(deposits);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: 'Error al obtener los depósitos del usuario' });
+    }
+  };
+  
+
+  
+  
+  
+  
+  //CANCEL DEPOSIT
+  exports.cancelDeposit = async (req, res) => {
+    try {
+      const depositId = req.params.id;
+  
+      const deposito = await Deposit.findOne({ _id: depositId });
+      if (!deposito) {
+        return res.status(404).send({ message: 'No se encuentra el número del depósito' });
+      }
+  
+      if (deposito.status === 'cancelado') {
+        return res.status(400).send({ message: 'El depósito ya ha sido cancelado previamente' });
+      }
+  
+      const tiempo = Math.floor(deposito.date + (1000 * 60 * 1));
+      const user = await User.findOne({ AccNo: deposito.noCuenta });
+      if (!user) {
+        return res.status(404).send({ message: 'Cuenta no encontrada' });
+      }
+  
+      if (Date.now() <= tiempo) {
+        let newSaldo = user.balance - deposito.amount;
+        const salUpdate = await User.findOneAndUpdate(
+          { _id: user._id },
+          { balance: newSaldo },
+          { new: true }
+        );
+  
+        const cancelar = await Deposit.findOneAndUpdate(
+          { _id: req.params.id },
+          { status: 'cancelado' },
+          { new: true }
+        );
+  
+        if (!salUpdate || !cancelar) {
+          return res.status(500).send({ message: 'Error al actualizar el saldo o el estado del depósito' });
+        }
+  
+        return res.send({ message: 'El depósito se ha cancelado correctamente' });
+      }
+  
+      return res.send({ message: 'El tiempo de cancelación ha expirado' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: 'Ocurrió un error' });
+    }
+  };
+  
+//GET 
+   exports.getAllDeposits = async (req, res) => {
+   try {
+    // Buscar todos los depósitos
+    const deposits = await Deposit.find();
+
+    // Enviar la lista de depósitos como respuesta
+    res.status(200).json(deposits);
+   } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'An error occurred' });
+  } 
+  };
+
+  //deposit Update
+  exports.updateDeposit = async (req, res) => {
+    try {
+      const depositId = req.params.id;
+      const newAmount = req.body.amount;
+  
+      const deposito = await Deposit.findOne({ _id: depositId });
+      if (!deposito) {
+        return res.status(404).send({ message: 'No se encuentra el número del depósito' });
+      }
+  
+      const tiempo = Math.floor(deposito.date + (1000 * 60 * 1));
+  
+      if (Date.now() <= tiempo) {
+        const difference = newAmount - deposito.amount;
+        const updatedDeposit = await Deposit.findOneAndUpdate(
+          { _id: depositId },
+          { amount: newAmount },
+          { new: true }
+        );
+  
+        const user = await User.findOne({ AccNo: deposito.noCuenta });
+        if (!user) {
+          return res.status(404).send({ message: 'Cuenta no encontrada' });
+        }
+  
+        const newBalance = user.balance + difference;
+        const updatedUser = await User.findOneAndUpdate(
+          { AccNo: deposito.noCuenta },
+          { balance: newBalance },
+          { new: true }
+        );
+  
+        return res.send({
+          message: 'El depósito se ha actualizado y el saldo de la cuenta beneficiaria se ha actualizado',
+          deposit: updatedDeposit,
+          user: updatedUser
+        });
+      }
+  
+      return res.send({ message: 'El tiempo de actualización ha expirado' });
+  
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ message: 'Ocurrió un error' });
+    }
+  };
   
