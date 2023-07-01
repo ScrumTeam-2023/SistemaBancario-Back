@@ -13,7 +13,7 @@ exports.defaultAdmin = async()=>{
             name: 'Narrow Future',
             surname: 'For us',
             username: `ADMINB`,
-            password: '123',
+            password: 'ADMIN',
             DPI: 212345683671011,
             location: 'Bank of Center',
             phone: '2012-2938',
