@@ -12,6 +12,10 @@ const addSRoutes = require('../src/addServices/addS.routes')
 const depositeRoutes = require('../src/deposit/deposit.routes')
 const tranferRoutes = require('../src/transfer/transfer.routes')
 const productRoutes = require('../src/product/product.routes')
+<<<<<<< HEAD
+=======
+const compraRoutes = require('../src/compras/compra.routes')
+>>>>>>> Pvillatoro
 //Entity routes
 
 app.use(express.urlencoded({extended: false}))
@@ -26,6 +30,10 @@ app.use('/addServices',addSRoutes)
 app.use('/deposit',depositeRoutes)
 app.use('/transfer',tranferRoutes)
 app.use('/product',productRoutes)
+<<<<<<< HEAD
+=======
+app.use('/compra', compraRoutes)
+>>>>>>> Pvillatoro
 //servidor
 
 exports.initServer = ()=>{
