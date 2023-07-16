@@ -82,43 +82,43 @@ exports.deleteProduct = async(req, res)=>{
     }
 }
 
-exports.compra = async(req, res) =>{
-    try {
-        let productId = req.params.id;
-        let compra = req.body;
-        const {sub} = req.user
-        let product = await Product.findOne({_id: productId})
-        if(!product){
-            return res.status(400).send({message: 'Product not found'})
-        }
-        let user = await User.findOne({_id: sub})
-        if(product.stock >= compra.compra){
-            product.stock = product.stock - compra.compra;   
-        }else{
-            res.send({message: 'No hay suficientes productos'})
-        }
-        if(user.balance >= product.price){
-            let pr = product.price * compra.compra
-            user.balance = user.balance - pr;
-        }else{
-            res.send({message: 'No hay suficiente presupuesto'})
-        }
-        if(product.stock == 0){
-            res.send({message: 'AGOTADO!!', product})
-        }
-        this.updateProduct.stock = product.stock;
+// exports.compra = async(req, res) =>{
+//     try {
+//         let productId = req.params.id;
+//         let compra = req.body;
+//         const {sub} = req.user
+//         let product = await Product.findOne({_id: productId})
+//         if(!product){
+//             return res.status(400).send({message: 'Product not found'})
+//         }
+//         let user = await User.findOne({_id: sub})
+//         if(product.stock >= compra.compra){
+//             product.stock = product.stock - compra.compra;   
+//         }else{
+//             res.send({message: 'No hay suficientes productos'})
+//         }
+//         if(user.balance >= product.price){
+//             let pr = product.price * compra.compra
+//             user.balance = user.balance - pr;
+//         }else{
+//             res.send({message: 'No hay suficiente presupuesto'})
+//         }
+//         if(product.stock == 0){
+//             res.send({message: 'AGOTADO!!', product})
+//         }
+//         this.updateProduct.stock = product.stock;
 
-        /*const comp = new Compra({
-            user: user,
-            product: product,
-        });
-        await comp.save();*/
+//         /*const comp = new Compra({
+//             user: user,
+//             product: product,
+//         });
+//         await comp.save();*/
 
-        user.save();
-        product.save();
+//         user.save();
+//         product.save();
 
-        res.send({message: 'Se a cambiado el stock y el precio', product, user}) 
-    } catch (err) {
-        console.log(err)
-    }
-}
+//         res.send({message: 'Se a cambiado el stock y el precio', product, user}) 
+//     } catch (err) {
+//         console.log(err)
+//     }
+// }

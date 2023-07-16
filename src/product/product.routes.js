@@ -11,6 +11,6 @@ api.get('/getProducts', productController.getProducts)
 api.get('/getProduct/:id', productController.getProduct)
 api.put('/updatePrduct/:id', productController.updateProduct)
 api.delete('/deleteProduct/:id', productController.deleteProduct)
-api.post('/compra/:id',ensureAuth, productController.compra)
+// api.post('/compra/:id',ensureAuth, productController.compra)
 
 module.exports = api;    

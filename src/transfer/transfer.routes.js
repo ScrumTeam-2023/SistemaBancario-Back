@@ -5,7 +5,7 @@ const api = express.Router();
 const TransferController = require('./transfer.controller')
 const { ensureAuth , isAdmin } = require('../services/autheticathed')
 
-api.post('/addTransfer',TransferController.makeTransfer);
+api.post('/addTransfer',ensureAuth,TransferController.makeTransfer);
 api.get('/get/:userId', TransferController.getTransfers);
 api.delete('/cancel/:id', TransferController.cancelTransfer);
 api.get('/getByAccount')

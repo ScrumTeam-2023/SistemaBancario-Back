@@ -12,6 +12,7 @@ exports.createToken = async(user)=>{
             username: user.username,
             email: user.email,
             role: user.role,
+            AccNo: user.AccNo,
             iat: Math.floor(Date.now() / 1000), //Fecha actual en formato UNIX | Segundos
             exp: Math.floor(Date.now() / 1000) + (60 * 120)
         }

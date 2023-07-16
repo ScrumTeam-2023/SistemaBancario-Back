@@ -30,10 +30,10 @@ exports.makeDeposit = async (req, res) => {
     await deposito.save();
 
     // Aumentar el movimiento en la cuenta de destino
-    const newMovement = user.movement + 1;
+    const newMovement = user.movements + 1;
     await User.findByIdAndUpdate(
       user._id,
-      { movement: newMovement },
+      { movements: newMovement },
       { new: true }
     );
 

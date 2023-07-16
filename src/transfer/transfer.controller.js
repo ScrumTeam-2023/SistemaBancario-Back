@@ -3,11 +3,14 @@ const Transfer = require('./transfer.model')
 const User = require('../user/user.model')
 
 /// TRANSFER
-
 exports.makeTransfer = async (req, res) => {
   try {
+    const user = req.user;
+    const sourceAccount = user.AccNo;
+
     let data = req.body;
     data.date = Date.now();
+    data.sourceAccount = sourceAccount;
 
     // Verificar si la cuenta de origen existe
     let existSourceAccount = await User.findOne({ AccNo: data.sourceAccount });
@@ -19,6 +22,11 @@ exports.makeTransfer = async (req, res) => {
     let existDestinationAccount = await User.findOne({ AccNo: data.destinationAccount });
     if (!existDestinationAccount) {
       return res.status(400).send({ message: 'Cuenta de destino no encontrada. Volver a intentar' });
+    }
+
+    // Verificar si el DPI coincide con el usuario actual
+    if (existDestinationAccount.DPI !== data.DPI) {
+      return res.status(400).send({ message: 'El DPI no coincide con el usuario ' });
     }
 
     // Verificar si el saldo de la cuenta de origen es suficiente
@@ -64,13 +72,19 @@ exports.makeTransfer = async (req, res) => {
       return res.status(400).send({ message: 'Se ha excedido el límite de transferencia diaria' });
     }
 
-    // Actualizar el saldo de la cuenta de origen
+    // Actualizar el saldo de la cuenta de origen y aumentar el campo movements
     let newSourceBalance = existSourceAccount.balance - transferAmount;
-    await User.findOneAndUpdate({ AccNo: data.sourceAccount }, { balance: newSourceBalance, $inc: { movement: 1 } });
+    await User.findOneAndUpdate(
+      { AccNo: data.sourceAccount },
+      { balance: newSourceBalance, $inc: { movements: 1 } }
+    );
 
-    // Actualizar el saldo de la cuenta de destino
+    // Actualizar el saldo de la cuenta de destino y aumentar el campo movements
     let newDestinationBalance = existDestinationAccount.balance + transferAmount;
-    await User.findOneAndUpdate({ AccNo: data.destinationAccount }, { balance: newDestinationBalance, $inc: { movement: 1 } });
+    await User.findOneAndUpdate(
+      { AccNo: data.destinationAccount },
+      { balance: newDestinationBalance, $inc: { movements: 1 } }
+    );
 
     // Crear la transferencia con la fecha
     let transfer = new Transfer(data);
@@ -82,9 +96,6 @@ exports.makeTransfer = async (req, res) => {
     return res.status(500).send({ message: 'No se puede completar la transferencia' });
   }
 };
-
-
-
 
 
 
