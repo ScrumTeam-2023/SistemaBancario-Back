@@ -1,4 +1,3 @@
-'use stric'
 const mongoose = require('mongoose');
 
 const tranferSchema = mongoose.Schema({
@@ -15,14 +14,16 @@ const tranferSchema = mongoose.Schema({
     required: true,
   },
   date: {
-    type: Date,
-    default: Date.now,
+    type: Number,
+  },
+  DPI: {
+    type: String,
+    required: true,
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
 });
-
 
 module.exports = mongoose.model('Transfer', tranferSchema);

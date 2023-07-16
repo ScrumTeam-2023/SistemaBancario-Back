@@ -17,6 +17,7 @@ api.post('/login',UserController.login)
 // THIS SON OF A $%#@!H GIVE ME ANXIETY V
 api.put('/editUser/:id',ensureAuth,UserController.editUser)
 api.put('/editProfile/:id',ensureAuth,UserController.editProfile)
+api.get('/history', ensureAuth, UserController.getTransactionsByUserId);
 //Rutas Exclusivas
 api.post('/save',[ensureAuth, isAdmin],UserController.save)
 api.delete('/delete/:id',[ensureAuth, isAdmin],UserController.delete)

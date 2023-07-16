@@ -1,57 +1,62 @@
 'use strict'
 
-const Favorite = require('./favorites.model')
+const Favorite = require('./favorites.model');
+const User = require('../user/user.model');
 
-// Funcion test
-exports.test = (req, res) => {
-    res.send({ message: 'Test function is running Favorite' });
-}
-
-// Add Favorite
 exports.addFavorite = async (req, res) => {
-    try {
-        let data = req.body;
-        //Validar duplicados
-         let existFavorite = await Favorite.findOne({apodo: data.apodo});
-        if(existFavorite) return res.status(404).send({message: 'Favorite already existed'}) 
-        // save
-        let favorite = new Favorite(data);
-        await favorite.save();
-        return res.send({ message: 'Favorite created sucessfully', favorite });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).send({ message: 'Error Creating Favorite' })
+  const { apodo, noCuenta, DPI } = req.body;
+
+  try {
+    // Obtener el ID del usuario logueado
+    const userId = req.user.sub;
+
+    // Verificar si el apodo ya existe
+    const existingFavorite = await Favorite.findOne({ apodo });
+    if (existingFavorite) {
+      return res.status(400).json({ message: 'El apodo ya está en uso' });
     }
-}
 
-exports.getFavorites = async(req, res)=>{
-    try{
-        //Buscar datos
-        let favorites = await Favorite.find();
-        return res.send({message: 'Favorite found', favorites});
-    }catch(err){
-        console.error(err);
-        return res.status(500).send({message: 'Error getting favorites'});
+    // Verificar si el número de cuenta y el DPI coinciden
+    const user = await User.findOne({ AccNo: noCuenta, DPI });
+    if (!user) {
+      return res.status(400).json({ message: 'El número de cuenta y el DPI no coinciden' });
     }
-}
+
+    // Crear el nuevo favorito asignando el ID del usuario
+    const newFavorite = new Favorite({
+      apodo,
+      noCuenta,
+      DPI,
+      user: userId
+    });
+
+    // Guardar el favorito en la base de datos
+    await newFavorite.save();
+
+    res.status(201).json({ message: 'Favorito agregado exitosamente' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error al agregar el favorito' });
+  }
+};
 
 
-exports.getFavorite = async(req, res)=>{
-    try{
-        //Obtener el Id del producto a buscar
-        let favoritetId = req.params.id;
-        //Buscarlo en BD
-        let favorite = await Favorite.findOne({_id: favoritetId});
-        //Valido que exista el producto
-        if(!favorite) return res.status(404).send({message: 'Favorite not found'});
-        //Si existe lo devuelvo
-        return res.send({message: 'Favorite found:', favorite});
-    }catch(err){
-        console.error(err);
-        return res.status(500).send({message: 'Error getting favorite'});
-    }
-}
 
+
+exports.getFavoritesByUserId = async (req, res) => {
+  try {
+    const userId = req.user.sub; // Obtener el ID del usuario logeado desde el token
+
+    // Buscar los favoritos asociados al usuario
+    const favorites = await Favorite.find({ user: userId });
+
+    res.json(favorites);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al obtener los favoritos del usuario' });
+  }
+};
+  
 exports.updateFavorite = async(req, res)=>{
     try{
         //obtener el Id del producto

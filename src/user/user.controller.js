@@ -205,3 +205,36 @@ exports.delete = async(req,res) =>{
         return res.status(500).send({msg:'Error At Deleting One User',err})  
     }
 }
+
+///HISTORY
+
+//History
+
+exports.getTransactionsByUserId = async (req, res) => {
+    try {
+      const token = req.headers.authorization.replace(/['"]+/g, '');
+      const decodedToken = jwt.decode(token, process.env.SECRET_KEY);
+  
+      const userId = decodedToken.sub;
+  
+      // Verificar si el usuario existe
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(400).send({ message: 'Usuario no encontrado' });
+      }
+  
+      // Obtener todas las transferencias y depósitos asociados a la cuenta del usuario
+      const transactions = await Promise.all([
+        Transfer.find({ $or: [{ sourceAccount: user.AccNo }, { destinationAccount: user.AccNo }] }),
+        Deposit.find({ noCuenta: user.AccNo })
+      ]);
+  
+      const transfers = transactions[0];
+      const deposits = transactions[1];
+  
+      return res.send({ transfers, deposits });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({ message: 'Error al obtener el historial de transacciones' });
+    }
+  };
