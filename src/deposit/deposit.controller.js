@@ -65,11 +65,6 @@ exports.makeDeposit = async (req, res) => {
     }
   };
   
-
-  
-  
-  
-  
   //CANCEL DEPOSIT
   exports.cancelDeposit = async (req, res) => {
     try {
@@ -94,7 +89,7 @@ exports.makeDeposit = async (req, res) => {
         let newSaldo = user.balance - deposito.amount;
         const salUpdate = await User.findOneAndUpdate(
           { _id: user._id },
-          { balance: newSaldo },
+          { balance: newSaldo, movements: user.movements - 1 }, // Restar 1 al campo movements
           { new: true }
         );
   
@@ -117,6 +112,7 @@ exports.makeDeposit = async (req, res) => {
       res.status(500).send({ message: 'Ocurrió un error' });
     }
   };
+  
   
 //GET 
    exports.getAllDeposits = async (req, res) => {
@@ -141,6 +137,10 @@ exports.makeDeposit = async (req, res) => {
       const deposito = await Deposit.findOne({ _id: depositId });
       if (!deposito) {
         return res.status(404).send({ message: 'No se encuentra el número del depósito' });
+      }
+  
+      if (deposito.status === 'cancelado') {
+        return res.status(400).send({ message: 'No se puede actualizar un depósito cancelado' });
       }
   
       const tiempo = Math.floor(deposito.date + (1000 * 60 * 1));

@@ -2,6 +2,7 @@
 
 const Product = require('./product.model')
 const User = require('../user/user.model')
+const Compra = require('../compras/compra.model')
 
 exports.test = async(req, res)=>{
     return res.send({message: 'Test is running'})
@@ -82,43 +83,36 @@ exports.deleteProduct = async(req, res)=>{
     }
 }
 
-// exports.compra = async(req, res) =>{
-//     try {
-//         let productId = req.params.id;
-//         let compra = req.body;
-//         const {sub} = req.user
-//         let product = await Product.findOne({_id: productId})
-//         if(!product){
-//             return res.status(400).send({message: 'Product not found'})
-//         }
-//         let user = await User.findOne({_id: sub})
-//         if(product.stock >= compra.compra){
-//             product.stock = product.stock - compra.compra;   
-//         }else{
-//             res.send({message: 'No hay suficientes productos'})
-//         }
-//         if(user.balance >= product.price){
-//             let pr = product.price * compra.compra
-//             user.balance = user.balance - pr;
-//         }else{
-//             res.send({message: 'No hay suficiente presupuesto'})
-//         }
-//         if(product.stock == 0){
-//             res.send({message: 'AGOTADO!!', product})
-//         }
-//         this.updateProduct.stock = product.stock;
-
-//         /*const comp = new Compra({
-//             user: user,
-//             product: product,
-//         });
-//         await comp.save();*/
-
-//         user.save();
-//         product.save();
-
-//         res.send({message: 'Se a cambiado el stock y el precio', product, user}) 
-//     } catch (err) {
-//         console.log(err)
-//     }
-// }
+exports.getMostPurchasedProducts = async (req, res) => {
+    try {
+      // Obtener todas las compras
+      const purchases = await Compra.find();
+  
+      // Calcular la cantidad de veces que se ha comprado cada producto
+      const productCounts = purchases.reduce((counts, compra) => {
+        const productId = compra.product.toString();
+        counts[productId] = (counts[productId] || 0) + compra.cantidad;
+        return counts;
+      }, {});
+  
+      // Obtener los IDs de los productos ordenados por cantidad de compras (de mayor a menor)
+      const sortedProductIds = Object.keys(productCounts).sort(
+        (a, b) => productCounts[b] - productCounts[a]
+      );
+  
+      // Obtener los detalles de los productos más comprados
+      const mostPurchasedProducts = await Product.find({ _id: { $in: sortedProductIds } });
+  
+      // Agregar contador de compras al objeto de cada producto
+      const data = mostPurchasedProducts.map((product) => ({
+        ...product.toObject(),
+        contadorCompras: productCounts[product._id.toString()] || 0,
+      }));
+  
+      res.json(data);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error al obtener los productos más comprados' });
+    }
+  };
+  

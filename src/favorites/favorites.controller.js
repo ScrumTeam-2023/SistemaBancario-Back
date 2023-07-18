@@ -22,6 +22,13 @@ exports.addFavorite = async (req, res) => {
       return res.status(400).json({ message: 'El número de cuenta y el DPI no coinciden' });
     }
 
+    // Verificar si el favorito ya está agregado para el usuario
+    const userFavorites = await Favorite.find({ user: userId });
+    const duplicateFavorite = userFavorites.find(favorite => favorite.noCuenta === noCuenta);
+    if (duplicateFavorite) {
+      return res.status(400).json({ message: 'El favorito ya está agregado' });
+    }
+
     // Crear el nuevo favorito asignando el ID del usuario
     const newFavorite = new Favorite({
       apodo,
@@ -39,8 +46,6 @@ exports.addFavorite = async (req, res) => {
     res.status(500).json({ message: 'Error al agregar el favorito' });
   }
 };
-
-
 
 
 exports.getFavoritesByUserId = async (req, res) => {

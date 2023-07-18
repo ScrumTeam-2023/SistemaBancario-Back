@@ -9,49 +9,70 @@ exports.test = async(req, res)=>{
     return res.send({message: 'Test is running '})
 }
 
-exports.compra = async(req, res) =>{
-    try {
-        let productId = req.params.id;
-        let data = req.body;
-        const {sub} = req.user
-        let product = await Product.findOne({_id: productId})  
-        if(!product){
-            return res.status(400).send({message: 'Product not found'})
-        }
-        let user = await User.findOne({_id: sub})
-        if(product.stock >= data.cantidad){
-            product.stock = product.stock - data.cantidad;   
-        }else{
-            res.send({message: 'No hay suficientes productos'})
-        }
-        if(user.balance >= product.price){
-            let pr = product.price * data.cantidad
-            user.balance = user.balance - pr;
-           
-        }else{
-            res.send({message: 'No hay suficiente presupuesto'})
-        }
-        if(product.stock == 0){
-            res.send({message: 'AGOTADO!!', product})
-        }
-        if(data.cantidad > 0){
-            user.movements = user.movements + 1;
-        controlProd.updateProduct.stock = product.stock;
-        controlUser.editUser.movements = user.movements;
-        const comp = new Compra({
-            user: user,
-            product: product._id,
-            cantidad: data.cantidad
-        });
-        await comp.save();
-        user.save();
-        product.save();
-        }
-        res.send({message: 'Se a cambiado el stock y el precio', product, user}) 
-    } catch (err) {
-        console.log(err)
+exports.compra = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const data = req.body;
+    const userId = req.user.sub;
+
+    const product = await Product.findOne({ _id: productId });
+    if (!product) {
+      return res.status(400).send({ message: 'Product not found' });
     }
-}
+
+    const user = await User.findOne({ _id: userId });
+    if (!user) {
+      return res.status(400).send({ message: 'User not found' });
+    }
+
+    if (product.stock < data.cantidad) {
+      return res.send({ message: 'No hay suficientes productos' });
+    }
+
+    const totalPrice = product.price * data.cantidad;
+    if (user.balance < totalPrice) {
+      return res.send({ message: 'No hay suficiente presupuesto' });
+    }
+
+    // Actualizar stock del producto y balance del usuario
+    product.stock -= data.cantidad;
+    user.balance -= totalPrice;
+
+    // Actualizar el contador de movimientos del usuario
+    user.movements += 1;
+    await user.save();
+
+    // Guardar los cambios en el producto
+    await product.save();
+
+    // Crear la compra
+    const compra = new Compra({
+      user: user._id,
+      product: product._id,
+      productName: product.name,
+      cantidad: data.cantidad,
+      amount: totalPrice,
+      date: new Date()
+    });
+    await compra.save();
+
+    res.send({
+      message: 'Compra realizada con éxito',
+      purchaseData: {
+        serviceId: product._id,
+        serviceName: product.name,
+        servicePrice: product.price,
+        userName: user.name,
+        userBalance: user.balance,
+        date: compra.date
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Error en la compra' });
+  }
+};
+
 
 exports.getCompras = async(req, res) =>{
     try {

@@ -18,8 +18,11 @@ api.post('/login',UserController.login)
 api.put('/editUser/:id',ensureAuth,UserController.editUser)
 api.put('/editProfile/:id',ensureAuth,UserController.editProfile)
 api.get('/history', ensureAuth, UserController.getTransactionsByUserId);
+api.get('/masMovements',UserController.getUsersByMovements);
 //Rutas Exclusivas
 api.post('/save',[ensureAuth, isAdmin],UserController.save)
 api.delete('/delete/:id',[ensureAuth, isAdmin],UserController.delete)
+api.get('/movements/:id', [ensureAuth, isAdmin], UserController.getLastFiveTransactionsByUserId);
+
 //, Not use for now
 module.exports = api
