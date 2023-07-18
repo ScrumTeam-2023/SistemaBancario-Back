@@ -68,6 +68,12 @@ const userSchema = mongoose.Schema(
       type: String,
       required: false,
       uppercase: true,
+      validate: {
+        validator: function (value) {
+          return value === 'CLIENT' || value === 'ADMIN';
+        },
+        message: 'Invalid role. Must be "CLIENT" or "ADMIN".',
+      },
       default: 'CLIENT',
     },
   },

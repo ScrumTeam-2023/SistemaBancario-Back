@@ -22,12 +22,6 @@ const serviceSchema = mongoose.Schema({
         type: String,
         require: true
     },
-    DPI:{
-        type: Number,
-        ref: 'User',
-        require: true
-
-    },
     state:{
         type: String,
         enum: ['DISPONIBLE','NO DISPONIBLE'],

@@ -12,5 +12,7 @@ api.post('/add', [ensureAuth, isAdmin], addSController.createService);
 api.put('/update/:id', [ensureAuth, isAdmin], addSController.updateService);
 api.delete('/delete/:id', [ensureAuth, isAdmin], addSController.deleteService);
 api.post('/acquire/:id', [ensureAuth], addSController.adquirirService)
+api.get('/mostPurchased', addSController.getMostPurchasedServices);
+
 
 module.exports = api;

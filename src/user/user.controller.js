@@ -1,8 +1,13 @@
 'use strict'
 
-const User = require('./user.model')
+const User = require('./user.model');
+const Transfer = require('../transfer/transfer.model')
+const Deposit = require('../deposit/deposit.model')
+const Purchase = require('../purchase/purchase.model')
+const Compra = require('../compras/compra.model')
 const { validateData, encrypt , checkPassword } = require('../utils/validate')
 const { createToken } = require ('../services/jwt')
+const jwt = require('jsonwebtoken');
 
 
 
@@ -13,7 +18,7 @@ exports.defaultAdmin = async()=>{
             name: 'Narrow Future',
             surname: 'For us',
             username: `ADMINB`,
-            password: 'ADMIN',
+            password: 'ADMINB',
             DPI: 212345683671011,
             location: 'Bank of Center',
             phone: '2012-2938',
@@ -103,8 +108,6 @@ exports.save = async(req,res) =>{
         return res.status(500).send({msg: 'Error at Saving',err})
     }
 }
-
-
 
 exports.getUsers = async(req,res) =>{
     try {
@@ -223,18 +226,96 @@ exports.getTransactionsByUserId = async (req, res) => {
         return res.status(400).send({ message: 'Usuario no encontrado' });
       }
   
-      // Obtener todas las transferencias y depósitos asociados a la cuenta del usuario
+      // Obtener todas las transferencias, depósitos, compras y adquisiciones asociadas a la cuenta del usuario
       const transactions = await Promise.all([
         Transfer.find({ $or: [{ sourceAccount: user.AccNo }, { destinationAccount: user.AccNo }] }),
-        Deposit.find({ noCuenta: user.AccNo })
+        Deposit.find({ noCuenta: user.AccNo }),
+        Purchase.find({ userName: user.username }),
+        Compra.find({ user: user._id }).populate('product')
       ]);
   
       const transfers = transactions[0];
       const deposits = transactions[1];
+      const purchases = transactions[2];
+      const compras = transactions[3];
   
-      return res.send({ transfers, deposits });
+      return res.send({ transfers, deposits, purchases, compras });
     } catch (error) {
       console.error(error);
       return res.status(500).send({ message: 'Error al obtener el historial de transacciones' });
     }
   };
+  
+
+//last five movements 
+exports.getLastFiveTransactionsByUserId = async (req, res) => {
+    try {
+      const userId = req.params.id;
+  
+      // Verificar si el usuario existe
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(400).send({ message: 'Usuario no encontrado' });
+      }
+  
+      // Obtener todas las transacciones de todas las categorías
+      const transfers = await Transfer.find({ $or: [{ sourceAccount: user.AccNo }, { destinationAccount: user.AccNo }] })
+        .sort({ date: -1 })
+        .select('date amount')
+        .lean();
+  
+      const deposits = await Deposit.find({ noCuenta: user.AccNo })
+        .sort({ date: -1 })
+        .select('date amount')
+        .lean();
+  
+      const purchases = await Purchase.find({ userName: user.username })
+        .sort({ date: -1 })
+        .select('date amount')
+        .lean();
+  
+      const compras = await Compra.find({ user: userId })
+        .sort({ date: -1 })
+        .populate('product')
+        .select('date amount')
+        .lean();
+  
+      // Agregar tipo de movimiento a cada objeto
+      const transfersWithType = transfers.map((transfer) => ({ ...transfer, type: 'Transfer' }));
+      const depositsWithType = deposits.map((deposit) => ({ ...deposit, type: 'Deposit' }));
+      const purchasesWithType = purchases.map((purchase) => ({ ...purchase, type: 'Purchase' }));
+      const comprasWithType = compras.map((compra) => ({ ...compra, type: 'Compra' }));
+  
+      // Combinar todas las transacciones en un solo array
+      const allTransactions = [...transfersWithType, ...depositsWithType, ...purchasesWithType, ...comprasWithType];
+  
+      // Ordenar el array de transacciones por fecha de forma descendente
+      allTransactions.sort((a, b) => b.date - a.date);
+  
+      // Obtener las últimas transacciones
+      const lastFiveTransactions = allTransactions.slice(0, 5);
+  
+      return res.send({ transactions: lastFiveTransactions });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({ message: 'Error al obtener las últimas transacciones' });
+    }
+  };
+  
+  
+//getMOVEMENTS ASCEND DESCEND
+exports.getUsersByMovements = async (req, res) => {
+    try {
+      const users = await User.find().sort({ movements: -1 });
+      const usersWithCounter = users.map((user) => ({
+        ...user._doc,
+        "contador de movimientos": user.movements,
+      }));
+      res.json(usersWithCounter);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error al obtener los usuarios' });
+    }
+  };
+  
+  
